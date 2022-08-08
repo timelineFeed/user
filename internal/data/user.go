@@ -31,10 +31,16 @@ func (r *userRepo) Create(ctx context.Context, g *biz.User) error {
 	return r.GetTableName().Create(g).Error
 }
 
-func (r *userRepo) FindPasswordByID(cxt context.Context, id uint64) (*biz.User, error) {
+func (r *userRepo) FindByPhoneOrEmail(cxt context.Context, phone string, email string) (*biz.User, error) {
 	user := new(biz.User)
-	return user, r.GetTableName().Select("password").
-		Where("id = ? and status = ?", id, model.StatusNormal).Find(&user).Error
+	db := r.GetTableName()
+	if phone != "" {
+		db = db.Where("telephone = ?", phone)
+	}
+	if email != "" {
+		db = db.Where("email = ?", email)
+	}
+	return user, db.Find(&user).Error
 }
 
 func (r *userRepo) FindByID(ctx context.Context, id uint64) (*biz.User, error) {
