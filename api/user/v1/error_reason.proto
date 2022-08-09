@@ -12,5 +12,6 @@ enum ErrorReason {
   USER_NOT_FOUND = 1;
   INCORRECT_INPUT_PARAMETERS = 10000;//输入参数有误
   SERVICE_INTERNAL_ERROR = 10001;//服务内部错误
+  DB_ERROR = 10002; //数据库执行出错
 
 }
