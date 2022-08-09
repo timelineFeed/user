@@ -15,9 +15,9 @@ import (
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
 	jwtv4 "github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
-
+	"github.com/jellydator/ttlcache/v2"
 	v1 "github.com/timelineFeed/user/api/user/v1"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -29,6 +29,7 @@ var (
 const (
 	TokenExpireDuration     = 24 * time.Hour
 	UserRedisExpireDuration = 60 * time.Second
+	UserTTLExpireDuration   = 10 * time.Second
 	Issuer                  = "user service"
 )
 
@@ -148,34 +149,63 @@ func (u *UserUsecase) UserDetail(ctx context.Context, id uint64) (*User, error) 
 // genUserDetail 合并查询用户信息的请求
 func (u *UserUsecase) genUserDetail(ctx context.Context, userID uint64) func() (interface{}, error) {
 	return func() (interface{}, error) {
-		// 先查询缓存、再查询db
+		// 先查询内存缓存、再查询redis、再查询db
 		key := fmt.Sprintf(data.UserRedisKey, userID)
+		var ur model.User
+		cache := ttlcache.NewCache()
+		value, err := cache.Get(key)
+		if err != nil && err != ttlcache.ErrNotFound {
+			return nil, err
+		}
+		// ttl 查询到的处理
+		if err == nil {
+			v, ok := value.(string)
+			if !ok {
+				return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "断言失败", "服务内部错误")
+			}
+			err = json.Unmarshal([]byte(v), &ur)
+			if err != nil {
+				return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "序列化失败", "服务内部错误")
+			}
+			return User{User: &ur}, nil
+		}
+
 		userStr, err := u.repo.GetUser(ctx, key)
 		if err != nil && err != redis.Nil {
 			return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "查询redis出错", "查询出错")
 		}
 		// redis查询到数据
 		if err == nil {
-			var u model.User
+
 			err = json.Unmarshal([]byte(userStr), &u)
 			if err != nil {
 				return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "redis获取的值序列化失败", "服务内部错误")
 			}
-			return &User{User: &u}, nil
+			return &User{User: &ur}, nil
 		}
 		// 查询db,写入redis
 		user, err := u.repo.FindByID(ctx, userID)
 		if err != nil {
 			return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "查询db出错", "服务内部错误")
 		}
-		userByte, err := json.Marshal(&user)
-		if err != nil {
-			return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "序列化失败", "服务内部错误")
-		}
-		err = u.repo.SetUser(ctx, key, string(userByte), UserRedisExpireDuration)
-		if err != nil {
-			return nil, errors.New(int(v1.ErrorReason_SERVICE_INTERNAL_ERROR), "设置redis缓存失败", "服务内部错误")
-		}
+		// 回写数据
+		go func() {
+			userByte, err := json.Marshal(&user)
+			if err != nil {
+				log.Errorf("序列化user失败,err=%+v", err)
+				return
+			}
+			//写内存缓存 ,写入失败不返回
+			err = cache.SetWithTTL(key, string(userByte), UserTTLExpireDuration)
+			if err != nil {
+				log.Errorf("ttl写入失败,err=%+v", err)
+			}
+			//写redis
+			err = u.repo.SetUser(ctx, key, string(userByte), UserRedisExpireDuration)
+			if err != nil {
+				log.Errorf("redis写入失败,err=%+v", err)
+			}
+		}()
 		return user, nil
 	}
 }
