@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "user/api/user/v1;v1";
+
+// The User service definition.
+service User {
+  // Register user register api
+  rpc Register (RegisterRequest) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/user/register"
+      body: "*"
+    };
+  }
+  // Login user login api
+  rpc Login (LoginRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      get : "/user/login"
+    };
+  }
+  // GetUser get one user info
+  rpc GetUser (GetUserRequest) returns (GetUserReply) {
+    option (google.api.http) = {
+      get : "/user/get_user"
+    };
+  }
+  // GetUserList get user info list
+  rpc GetUserList(GetUserListRequest) returns (GetUserListReply) {
+    option (google.api.http) = {
+      get:"/user/user_list"
+    };
+  }
+  // Update update user info
+  rpc Update(UpdateRequest) returns (UpdateReply) {
+    option (google.api.http) = {
+      post:"/user/update"
+      body: "*"
+    };
+  }
+}
+
+message RegisterRequest {
+  string name = 1;
+  string phone = 2;
+  string password = 3;
+  string email = 4;
+}
+
+message RegisterReply {
+  uint64 uid = 1;
+}
+
+message LoginRequest {
+  uint64 uid = 1;
+  string phone = 2;
+  string email = 3;
+  string password = 4;
+  map<string, google.protobuf.Any> extra = 5;
+}
+
+message UserInfo {
+  uint64 uid = 1;
+  string phone = 2;
+  string email = 3;
+  string name = 4;
+  map<string, google.protobuf.Any> extra = 5;
+}
+message LoginReply {
+  UserInfo user = 1;
+}
+
+message GetUserRequest {
+  uint64 uid = 1;
+}
+
+
+message GetUserReply {
+  UserInfo user = 1;
+}
+
+message GetUserListRequest {
+  repeated uint64  uid_list = 1;
+}
+
+message GetUserListReply {
+  repeated UserInfo users = 1;
+}
+
+message UpdateRequest {
+  UserInfo user = 1;
+}
+
+message UpdateReply {}

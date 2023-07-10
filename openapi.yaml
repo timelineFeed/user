@@ -1,0 +1,188 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: User API
+    description: The User service definition.
+    version: 0.0.1
+paths:
+    /user/get_user:
+        get:
+            tags:
+                - User
+            description: GetUser get one user info
+            operationId: User_GetUser
+            parameters:
+                - name: uid
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint64
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.GetUserReply'
+    /user/login:
+        get:
+            tags:
+                - User
+            description: Login user login api
+            operationId: User_Login
+            parameters:
+                - name: uid
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint64
+                - name: phone
+                  in: query
+                  schema:
+                    type: string
+                - name: email
+                  in: query
+                  schema:
+                    type: string
+                - name: password
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.LoginReply'
+    /user/register:
+        post:
+            tags:
+                - User
+            description: Register user register api
+            operationId: User_Register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.v1.RegisterRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.RegisterReply'
+    /user/update:
+        post:
+            tags:
+                - User
+            description: Update update user info
+            operationId: User_Update
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.v1.UpdateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.UpdateReply'
+    /user/user_list:
+        get:
+            tags:
+                - User
+            description: GetUserList get user info list
+            operationId: User_GetUserList
+            parameters:
+                - name: uidList
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: integer
+                        format: uint64
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.GetUserListReply'
+components:
+    schemas:
+        google.protobuf.Any:
+            type: object
+            properties:
+                '@type':
+                    type: string
+                    description: The type of the serialized message.
+            additionalProperties: true
+            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        user.v1.GetUserListReply:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/user.v1.UserInfo'
+        user.v1.GetUserReply:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/user.v1.UserInfo'
+        user.v1.LoginReply:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/user.v1.UserInfo'
+        user.v1.RegisterReply:
+            type: object
+            properties:
+                uid:
+                    type: integer
+                    format: uint64
+        user.v1.RegisterRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                phone:
+                    type: string
+                password:
+                    type: string
+                email:
+                    type: string
+        user.v1.UpdateReply:
+            type: object
+            properties: {}
+        user.v1.UpdateRequest:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/user.v1.UserInfo'
+        user.v1.UserInfo:
+            type: object
+            properties:
+                uid:
+                    type: integer
+                    format: uint64
+                phone:
+                    type: string
+                email:
+                    type: string
+                name:
+                    type: string
+                extra:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/google.protobuf.Any'
+tags:
+    - name: User

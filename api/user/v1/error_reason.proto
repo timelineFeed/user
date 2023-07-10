@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "user/api/user/v1;v1";
+
+enum ErrorReason {
+  USER_EXISTED = 0; // 用户已经存在
+  USER_NOT_FOUND = 1; // 用户找不到
+  USER_PASSWD_CHECK_FAILED = 2; //用户密码验证失败
+}
