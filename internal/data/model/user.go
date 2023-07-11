@@ -8,7 +8,7 @@ import (
 )
 
 type User struct {
-	ID        uint      `gorm:"column:id"`
+	ID        uint64    `gorm:"column:id"`
 	Name      string    `gorm:"column:name"`       // 用户昵称
 	Password  string    `gorm:"column:password"`   // 用户密码hash
 	Telephone string    `gorm:"column:telephone"`  // 用户电话号码

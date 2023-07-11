@@ -51,7 +51,6 @@ message RegisterRequest {
 }
 
 message RegisterReply {
-  uint64 uid = 1;
 }
 
 message LoginRequest {
@@ -71,6 +70,7 @@ message UserInfo {
 }
 message LoginReply {
   UserInfo user = 1;
+  string token = 2;
 }
 
 message GetUserRequest {

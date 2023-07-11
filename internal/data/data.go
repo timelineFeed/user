@@ -1,18 +1,18 @@
 package data
 
 import (
-	"user/internal/conf"
-
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
+	"gorm.io/gorm"
+	"user/internal/conf"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewGreeterRepo)
+var ProviderSet = wire.NewSet(NewData, NewUserRepo)
 
 // Data .
 type Data struct {
-	// TODO wrapped database client
+	DB *gorm.DB
 }
 
 // NewData .
