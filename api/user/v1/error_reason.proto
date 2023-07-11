@@ -8,4 +8,6 @@ enum ErrorReason {
   USER_EXISTED = 0; // 用户已经存在
   USER_NOT_FOUND = 1; // 用户找不到
   USER_PASSWD_CHECK_FAILED = 2; //用户密码验证失败
+  INTERNAL_ERROR = 3; // 服务内部错误
+  DB_OPERATE_ERROR = 4;// db操作失败
 }

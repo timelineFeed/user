@@ -30,12 +30,12 @@ func (u userRepo) Update(ctx context.Context, user *model.User) (*model.User, er
 	return user, u.data.DB.WithContext(ctx).Where("id = ?", user.ID).Updates(user).Error
 }
 
-func (u userRepo) FindByID(ctx context.Context, id int64) (*model.User, error) {
+func (u userRepo) FindByID(ctx context.Context, id uint64) (*model.User, error) {
 	user := &model.User{}
 	return user, u.data.DB.WithContext(ctx).Where("id = ?", id).First(user).Error
 }
 
-func (u userRepo) List(ctx context.Context, ids []int64) ([]*model.User, error) {
+func (u userRepo) List(ctx context.Context, ids []uint64) ([]*model.User, error) {
 	userList := make([]*model.User, 0, len(ids))
 	return userList, u.data.DB.WithContext(ctx).Where("id in ?", ids).Find(&userList).Error
 }
