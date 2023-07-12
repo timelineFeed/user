@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	jwtv4 "github.com/golang-jwt/jwt/v4"
 	v1 "user/api/user/v1"
 	"user/internal/conf"
 	"user/internal/service"
@@ -15,6 +17,9 @@ func NewGRPCServer(c *conf.Server, user *service.UserService, logger log.Logger)
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
+			jwt.Server(func(token *jwtv4.Token) (interface{}, error) {
+				return []byte(secretKey), nil
+			}, jwt.WithSigningMethod(jwtv4.SigningMethodHS256)),
 		),
 	}
 	if c.Grpc.Network != "" {

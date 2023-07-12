@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -23,9 +24,6 @@ var (
 	ErrPasswordCheck = errors.InternalServer(v1.ErrorReason_USER_PASSWD_CHECK_FAILED.String(), "passwd check failed")
 )
 
-type User struct {
-}
-
 // UserRepo is a user repo.
 type UserRepo interface {
 	Create(context.Context, *model.User) error
@@ -39,6 +37,10 @@ type UserUseCase struct {
 	repo UserRepo
 	log  *log.Helper
 }
+
+const (
+	secretKey = "user123hh"
+)
 
 // NewUserUseCase new a Greeter usecase.
 func NewUserUseCase(repo UserRepo, logger log.Logger) *UserUseCase {
@@ -81,35 +83,24 @@ func (uc *UserUseCase) Login(ctx context.Context, in *v1.LoginRequest) (*v1.Logi
 		uc.log.WithContext(ctx).Errorf("compare password err=%+v", err)
 		return nil, ErrPasswordCheck
 	}
-	// todo jwt
-
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"uid": user.ID,
+	})
+	token, err := claims.SignedString([]byte(secretKey))
+	if err != nil {
+		uc.log.WithContext(ctx).Errorf("get jwt token err=%+v", err)
+		return nil, err
+	}
 	return &v1.LoginReply{
 		User: &v1.UserInfo{
 			Uid:   user.ID,
 			Phone: user.Telephone,
 			Email: user.Email,
 			Name:  user.Name,
-			Extra: convertMap(user.Extra),
+			Extra: goAny2pbAny(user.Extra),
 		},
-		Token: "",
+		Token: token,
 	}, nil
-}
-
-// convertMap todo test
-func convertMap(originalMap map[string]interface{}) map[string]*anypb.Any {
-	convertedMap := make(map[string]*anypb.Any)
-	for key, value := range originalMap {
-		pv, ok := value.(proto.Message)
-		if !ok {
-			panic("value can not assert proto.Message")
-		}
-		anyValue, err := anypb.New(pv)
-		if err != nil {
-			panic(fmt.Sprintf("anypb new err=%+v", err))
-		}
-		convertedMap[key] = anyValue
-	}
-	return convertedMap
 }
 
 // GetUser get one user info
@@ -127,7 +118,7 @@ func (uc *UserUseCase) GetUser(ctx context.Context, in *v1.GetUserRequest) (*v1.
 		Phone: user.Telephone,
 		Email: user.Email,
 		Name:  user.Name,
-		Extra: convertMap(user.Extra),
+		Extra: goAny2pbAny(user.Extra),
 	}}, nil
 }
 
@@ -150,7 +141,7 @@ func (uc *UserUseCase) GetUserList(ctx context.Context, in *v1.GetUserListReques
 			Phone: user.Telephone,
 			Email: user.Email,
 			Name:  user.Name,
-			Extra: convertMap(user.Extra),
+			Extra: goAny2pbAny(user.Extra),
 		}
 		resUsers = append(resUsers, resUser)
 	}
@@ -166,6 +157,7 @@ func (uc *UserUseCase) Update(ctx context.Context, in *v1.UpdateRequest) (*v1.Up
 		Name:      in.User.GetName(),
 		Telephone: in.User.GetPhone(),
 		Email:     in.User.GetEmail(),
+		Extra:     pbAny2goAny(in.User.Extra),
 		UpdatedAt: time.Now(),
 	}
 	user, err := uc.repo.Update(ctx, user)
@@ -174,4 +166,33 @@ func (uc *UserUseCase) Update(ctx context.Context, in *v1.UpdateRequest) (*v1.Up
 		return nil, ErrBdOperate
 	}
 	return &v1.UpdateReply{}, nil
+}
+
+func pbAny2goAny(in map[string]*anypb.Any) map[string]interface{} {
+	res := make(map[string]interface{}, len(in))
+	for key, value := range in {
+		anyValue, err := anypb.New(value)
+		if err != nil {
+			panic(fmt.Sprintf("anypb.New err=%+v", err))
+		}
+		res[key] = anyValue
+	}
+	return res
+}
+
+// goAny2pbAny
+func goAny2pbAny(originalMap map[string]interface{}) map[string]*anypb.Any {
+	convertedMap := make(map[string]*anypb.Any)
+	for key, value := range originalMap {
+		pv, ok := value.(proto.Message)
+		if !ok {
+			panic("value can not assert proto.Message")
+		}
+		anyValue, err := anypb.New(pv)
+		if err != nil {
+			panic(fmt.Sprintf("anypb new err=%+v", err))
+		}
+		convertedMap[key] = anyValue
+	}
+	return convertedMap
 }
